@@ -33,6 +33,16 @@ www/            提供的测试网页
 
 
 
+## 试用
+
+[cppreference 备份（无查询功能）](http://47.93.196.173:7878/reference/zh/index.html)
+
+[libevent-book](http://47.93.196.173:7878/libevent-book/TOC.html)
+
+
+
+
+
 ## TODO
 
 - [ ] 完善文件未找到的处理逻辑，减少客户端等待时间
