@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <cstring>
 #include <csignal>
@@ -12,19 +13,7 @@
 #include <event2/http_struct.h>
 #include <hiredis/hiredis.h>
 #include "log.h"
-
-#define BUF_SIZE 1024 * 1024
-
-#define REDIS_ADDR "127.0.0.1"
-#define REDIS_PORT 6379
-#define REDIS_PASSWORD "hello world"
-/* if define it, you need a password to connect redis */
-#define NEED_AUTH
-#define MAX_RETRY_COUNT 5
-#define WANT_VISIT_COUNT 100
-
-#define SERVER_ADDR "127.0.0.1"
-#define SERVER_PORT 8080
+#include "config.h"
 
 #define DEBUG LOG_TYPE::LOG_DEBUG
 #define INFO LOG_TYPE::LOG_INFO
@@ -117,7 +106,7 @@ void RedisServer::insert_cache(shared_ptr<const string> page_link,
     }
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> page_link:%s reply_type:%d", __func__, page_link->c_str(), reply->type);
+        LOG(WARN, "<%s> page_link:%s reply:%s", __func__, page_link->c_str(), reply->str);
     }
 
     freeReplyObject(reply.release());
@@ -137,7 +126,7 @@ void RedisServer::add_total_visit_count()
 
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> reply_type:%d", __func__, reply->type);
+        LOG(WARN, "<%s> reply:%s", __func__, reply->str);
     }
 
     freeReplyObject(reply.release());
@@ -152,11 +141,11 @@ long long RedisServer::get_total_visit_count()
 
     if (nullptr == reply || reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> get totalVisitCout failed %d", __func__, (reply != nullptr) ? reply->type : -1);
+        LOG(WARN, "<%s> get totalVisitCount failed %d", __func__, (reply != nullptr) ? reply->type : -1);
         return -1;
     }
 
-    return reply->integer;
+    return atoi(reply->str);
 }
 
 void RedisServer::add_visit_record(shared_ptr<const string> page_link)
@@ -167,7 +156,9 @@ void RedisServer::add_visit_record(shared_ptr<const string> page_link)
     if (nullptr == conn && !connect_redis())
         return;
 
-    string key{"totalVisitCount"};
+    add_total_visit_count();
+
+    string key{"visitRecordMap"};
 
     unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "ZINCRBY %s 1 %s", key.c_str(), page_link->c_str()));
     if (nullptr == reply)
@@ -178,7 +169,7 @@ void RedisServer::add_visit_record(shared_ptr<const string> page_link)
 
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> page_link:%s reply_type:%d", __func__, page_link->c_str(), reply->type);
+        LOG(WARN, "<%s> page_link:%s reply:%s", __func__, page_link->c_str(), reply->str);
     }
 
     freeReplyObject(reply.release());
@@ -190,7 +181,7 @@ bool RedisServer::get_visit_record(shared_ptr<string> page, int start, int end)
     if (!redis_is_health || (nullptr == conn && !connect_redis()))
         return false;
 
-    string key{"visitCnt"};
+    string key{"visitRecordMap"};
 
     unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "ZREVRANGE %s %d %d WITHSCORES", key.c_str(), start, end));
 
@@ -202,7 +193,7 @@ bool RedisServer::get_visit_record(shared_ptr<string> page, int start, int end)
 
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> reply_type:%d", __func__, reply->type);
+        LOG(WARN, "<%s> reply:%s", __func__, reply->str);
 
         freeReplyObject(reply.release());
         return false;
@@ -216,6 +207,7 @@ bool RedisServer::get_visit_record(shared_ptr<string> page, int start, int end)
         {
             if (i % 2)
             {
+                /*TODO I know it's ugly, because I am not sure the reply type of ZREVRANGE. in the future I will modify the code */
                 (reply->element[i]->type == REDIS_REPLY_STRING) ? tmp.append(reply->element[i]->str) : tmp.append(std::to_string(reply->element[i]->integer));
 
                 tmp.append("</br>");
@@ -243,6 +235,7 @@ bool RedisServer::query_cache(shared_ptr<const string> page_link, shared_ptr<str
     if (nullptr == conn && !connect_redis())
         return false;
 
+    
     add_visit_record(page_link);
 
     string key{"pageCache"};
@@ -302,15 +295,14 @@ bool RedisServer::connect_redis()
 
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> redis AUTH error addr:%s port:%d, password:%s", __func__, redis_addr.c_str(), redis_port, REDIS_PASSWORD);
+        LOG(ERROR, "<%s> redis AUTH error addr:%s port:%d, password:%s", __func__, redis_addr.c_str(), redis_port, REDIS_PASSWORD);
         freeReplyObject(reply.release());
         return false;
     }
 #endif
 
-    LOG(WARN, "<%s> redis connect success! addr:%s port:%d", __func__, redis_addr.c_str(), redis_port);
+    LOG(INFO, "<%s> redis connect success! addr:%s port:%d", __func__, redis_addr.c_str(), redis_port);
     retry_count = 0;
-    freeReplyObject(reply.release());
     return true;
 }
 
@@ -385,7 +377,24 @@ void get_cb(struct evhttp_request *req, void *arg)
     }
     /* TODO In the future, take out the common code below, 
     and delete path, just use path_old as the common page link */
-    shared_ptr<string> path(new string(*path_old.get()));
+    // shared_ptr<string> path(new string(*path_old.get()));
+    /* remove the first character '/' */
+    shared_ptr<string> path(new string(path_old->substr(1)));
+
+    /* check if file is exist before open it */
+    struct stat buf;
+    if (stat(path->c_str(), &buf) == -1)
+    {
+        LOG(WARN, "<%s> file not exist file:%s", __func__, path->c_str());
+        path->assign("404.html");
+    }
+
+#ifdef HIDE_LOG_FILE
+    if (path->compare("website.log") == 0)
+    {
+        path->assign("404.html");
+    }
+#endif
 
     LOG(DEBUG, "<%s> path:%s", __func__, path.get());
 
@@ -399,9 +408,8 @@ void get_cb(struct evhttp_request *req, void *arg)
     if (i == string::npos)
     {
         LOG(INFO, "<%s> error page link:%s:", __func__, path->c_str());
-        path->assign("/404.html");
+        path->assign("404.html");
         i = path->rfind('.');
-        std::cout << i << std::endl;
     }
 
     const string ext = path->substr(i);
@@ -423,7 +431,8 @@ void get_cb(struct evhttp_request *req, void *arg)
     else
     {
         LOG(INFO, "<%s> unknown extension:%s", __func__, ext.c_str());
-        return;
+        /* take unknow files types as plain file*/
+        content_type = "text/plain";
     }
 
     do
@@ -437,12 +446,12 @@ void get_cb(struct evhttp_request *req, void *arg)
             break;
         }
 
-        std::ifstream file(path->substr(1));
+        std::ifstream file(*path);
         shared_ptr<string> buffer(new string);
         if (!file.is_open())
         {
-            LOG(WARN, "<%s> open file error file:%s", __func__, path->substr(1).c_str());
-            return;
+            LOG(WARN, "<%s> open file error file:%s", __func__, path->c_str());
+            path->assign("404.html");
         }
         string tmp;
         while (getline(file, tmp))
