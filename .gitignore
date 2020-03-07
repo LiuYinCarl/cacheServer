@@ -1,0 +1,6 @@
+# ignore dirs
+.vscode/
+
+# ignore files
+server
+website.log

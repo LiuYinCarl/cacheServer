@@ -1,3 +1,4 @@
 2020-03-05 15:21:29[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
 2020-03-05 15:25:21[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
 2020-03-05 15:26:15[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
+2020-03-07 20:33:10[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
