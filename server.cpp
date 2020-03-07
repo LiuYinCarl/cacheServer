@@ -31,22 +31,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            umask(0);
-            pid_t sid = setsid();
-            if (sid < 0)
-                return -1;
-
-            /* change work dir */
-            if (chdir("./") < 0)
-                return -1;
-
-            close(STDIN_FILENO);
-            close(STDOUT_FILENO);
-            close(STDERR_FILENO);
-
-            freopen("/dev/null", "r", stdin);
-            freopen("/dev/null", "w", stdout);
-            freopen("dev/null", "w", stderr);
+            daemon(1, 0);
         }
     }
 
