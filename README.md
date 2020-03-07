@@ -35,6 +35,10 @@ website.log 	日志文件
 www/            提供的测试网页
 ```
 
+## 依赖
+- Redis
+- hiredis
+
 
 
 ## 试用
