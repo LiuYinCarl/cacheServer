@@ -1,41 +1,5 @@
-2020-03-05 15:21:29[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
-2020-03-05 15:25:21[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
-2020-03-05 15:26:15[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
-2020-03-07 20:33:10[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
-2020-03-07 20:45:54[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
-2020-03-07 20:45:54[ERROR]<main> create evhttp failed
-2020-03-07 20:46:05[WARN]<get_cb> file not exist file:
-2020-03-07 20:46:05[WARN]<add_total_visit_count> INCR totalVisitCount failed reply_type:-1
-2020-03-07 20:46:05[WARN]<add_visit_record> page_link:404.html reply_type:-1
-2020-03-07 20:46:05[WARN]<query_cache> page_link:404.html reply_type:-1
-2020-03-07 20:46:05[WARN]<insert_cache> page_link:404.html reply_type:-1
-2020-03-07 20:46:17[WARN]<add_total_visit_count> INCR totalVisitCount failed reply_type:-1
-2020-03-07 20:46:17[WARN]<add_visit_record> page_link:www/index.html reply_type:-1
-2020-03-07 20:46:17[WARN]<query_cache> page_link:www/index.html reply_type:-1
-2020-03-07 20:46:17[WARN]<insert_cache> page_link:www/index.html reply_type:-1
-2020-03-07 20:46:20[WARN]<add_total_visit_count> INCR totalVisitCount failed reply_type:-1
-2020-03-07 20:46:20[WARN]<add_visit_record> page_link:www/Ref3_eventloop.html reply_type:-1
-2020-03-07 20:46:20[WARN]<query_cache> page_link:www/Ref3_eventloop.html reply_type:-1
-2020-03-07 20:46:20[WARN]<insert_cache> page_link:www/Ref3_eventloop.html reply_type:-1
-2020-03-07 20:46:29[WARN]<get_total_visit_count> get totalVisitCount failed -1
-2020-03-07 20:46:29[WARN]<get_visit_record> reply_type:-1
-2020-03-07 20:46:38[WARN]<get_total_visit_count> get totalVisitCount failed -1
-2020-03-07 20:46:38[WARN]<get_visit_record> reply_type:-1
-2020-03-07 20:47:14[WARN]<add_total_visit_count> INCR totalVisitCount failed reply_type:-1
-2020-03-07 20:47:14[WARN]<add_visit_record> page_link:www/index.html reply_type:-1
-2020-03-07 20:47:14[WARN]<query_cache> page_link:www/index.html reply_type:-1
-2020-03-07 20:47:14[WARN]<insert_cache> page_link:www/index.html reply_type:-1
-2020-03-07 20:47:19[WARN]<get_total_visit_count> get totalVisitCount failed -1
-2020-03-07 20:47:19[WARN]<get_visit_record> reply_type:-1
-2020-03-07 20:47:20[WARN]<get_total_visit_count> get totalVisitCount failed -1
-2020-03-07 20:47:20[WARN]<get_visit_record> reply_type:-1
-2020-03-07 20:47:22[WARN]<get_total_visit_count> get totalVisitCount failed -1
-2020-03-07 20:47:22[WARN]<get_visit_record> reply_type:-1
-2020-03-07 20:52:10[WARN]<get_total_visit_count> get totalVisitCount failed -1
-2020-03-07 20:52:10[WARN]<get_visit_record> reply_type:-1
-2020-03-07 20:55:08[INFO]<connect_redis> redis connect success! addr:127.0.0.1 port:6379
-2020-03-08 17:19:33[WARN]<get_cb> file not exist file:favicon.ico
-2020-03-08 17:19:33[WARN]<add_total_visit_count> INCR totalVisitCount failed reply_type:-1
-2020-03-08 17:19:33[WARN]<add_visit_record> page_link:404.html reply_type:-1
-2020-03-08 17:19:33[WARN]<query_cache> page_link:404.html reply_type:-1
-2020-03-08 17:19:33[WARN]<insert_cache> page_link:404.html reply_type:-1
+2020-03-09 00:30:45[ERROR] test_log 17 test log function 100 3.140000
+2020-03-09 00:31:48[ERROR]<test_log: 17>test log function 100 3.140000
+2020-03-09 00:39:17[ERROR]<connect_redis: 307>redis AUTH error addr:127.0.0.1 port:6379, password:hello world
+2020-03-09 00:39:31[INFO]<get_cb: 435>error page link:www/:
+2020-03-09 00:39:36[WARN]<get_cb: 413>file not exist file:www/index.html888888888

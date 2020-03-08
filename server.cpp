@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     struct evhttp *server(evhttp_start(SERVER_ADDR, SERVER_PORT));
     if (nullptr == server)
     {
-        LOG(LOG_TYPE::LOG_ERROR, "<%s> create evhttp failed", __func__);
+        LOG(LOG_TYPE::LOG_ERROR, "create evhttp failed");
         return -1;
     }
 

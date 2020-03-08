@@ -4,7 +4,7 @@
 #define REDIS_PORT 6379
 #define REDIS_PASSWORD "hello world"
 /* if define it, you need a password to connect redis */
-// #define NEED_AUTH
+#define NEED_AUTH
 #define MAX_RETRY_COUNT 5
 #define WANT_VISIT_COUNT 100
 

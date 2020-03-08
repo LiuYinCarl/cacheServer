@@ -6,6 +6,10 @@
 
 #define LOG_FILE "website.log"
 
+#define LOG(t, format, ...) do {\
+    log(__func__, __LINE__, t, format, ##__VA_ARGS__);\
+    } while(0);
+
 using std::string;
 
 
@@ -20,7 +24,7 @@ typedef enum class LOG_TYPE
 LOG_TYPE log_level = LOG_TYPE::LOG_INFO;
 
 static string get_current_time();
-void LOG(LOG_TYPE t, const char *format, ...);
+void log(LOG_TYPE t, const char *format, ...);
 
 void SET_LOG_LEVEL(LOG_TYPE t)
 {
@@ -35,7 +39,7 @@ static string get_current_time()
     return ch;
 }
 
-void LOG(LOG_TYPE t, const char *format, ...)
+void log(const char* func, int line, LOG_TYPE t, const char *format, ...)
 {
     if (t < log_level)
         return;
@@ -62,6 +66,8 @@ void LOG(LOG_TYPE t, const char *format, ...)
         fprintf(pf, "[ERROR]");
         break;
     }
+
+    fprintf(pf, "<%s: %d>", func, line);
 
     va_list arg;
     va_start(arg, format);

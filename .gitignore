@@ -3,4 +3,5 @@
 
 # ignore files
 server
+test
 website.log

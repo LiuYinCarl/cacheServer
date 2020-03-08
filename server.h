@@ -29,11 +29,18 @@ using std::unique_ptr;
 class RedisServer;
 static unique_ptr<RedisServer> redis_server = nullptr;
 
+struct UsedKeys
+{
+    string total_visit_count{"cs_tvc"};
+    string page_cache{"cs_pc"};
+    string visit_record_map{"cs_vrm"};
+};
+
 class RedisServer
 {
 public:
-    RedisServer(string addr, int port)
-        : redis_addr(addr), redis_port(port) { connect_redis(); }
+    RedisServer(string addr, int port, short db = 0)
+        : redis_addr(addr), redis_port(port), redis_db(db) { connect_redis(); }
 
     ~RedisServer() { redisFree(conn.release()); }
 
@@ -80,8 +87,10 @@ public:
     // void free_redis();
 
 private:
+    UsedKeys keys;
     string redis_addr;
     int redis_port;
+    short redis_db;
     int retry_count = 0;
     bool redis_is_health = true;
     unique_ptr<redisContext> conn = nullptr;
@@ -96,17 +105,18 @@ void RedisServer::insert_cache(shared_ptr<const string> page_link,
     if (nullptr == conn && !connect_redis())
         return;
 
-    string key{"pageCache"};
+    // string key{"pageCache"};
+    string key{keys.page_cache};
 
     unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "HSET %s %s %s", key.c_str(), page_link->c_str(), page->c_str()));
     if (reply == nullptr)
     {
-        LOG(WARN, "<%s> page_link:%s reply_type:%d", __func__, page_link->c_str(), -1);
+        LOG(WARN, "page_link:%s reply_type:%d", page_link->c_str(), -1);
         return;
     }
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> page_link:%s reply:%s", __func__, page_link->c_str(), reply->str);
+        LOG(WARN, "page_link:%s reply:%s", page_link->c_str(), reply->str);
     }
 
     freeReplyObject(reply.release());
@@ -117,16 +127,17 @@ void RedisServer::add_total_visit_count()
     if (!redis_is_health || (nullptr == conn && !connect_redis()))
         return;
 
-    unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "INCR totalVisitCount"));
+    string key{keys.total_visit_count};
+    unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "INCR %s", key.c_str()));
     if (nullptr == reply)
     {
-        LOG(WARN, "<%s> INCR totalVisitCount failed reply_type:%d", __func__, -1);
+        LOG(WARN, "INCR totalVisitCount failed reply_type:%d", -1);
         return;
     }
 
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> reply:%s", __func__, reply->str);
+        LOG(WARN, "reply:%s", reply->str);
     }
 
     freeReplyObject(reply.release());
@@ -137,11 +148,12 @@ long long RedisServer::get_total_visit_count()
     if (!redis_is_health || (nullptr == conn && !connect_redis()))
         return -1;
 
-    unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "GET totalVisitCount"));
+    string key{keys.total_visit_count};
+    unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "GET %s", key.c_str()));
 
     if (nullptr == reply || reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> get totalVisitCount failed %d", __func__, (reply != nullptr) ? reply->type : -1);
+        LOG(WARN, "get totalVisitCount failed %d", (reply != nullptr) ? reply->type : -1);
         return -1;
     }
 
@@ -158,18 +170,17 @@ void RedisServer::add_visit_record(shared_ptr<const string> page_link)
 
     add_total_visit_count();
 
-    string key{"visitRecordMap"};
-
+    string key{keys.visit_record_map};
     unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "ZINCRBY %s 1 %s", key.c_str(), page_link->c_str()));
     if (nullptr == reply)
     {
-        LOG(WARN, "<%s> page_link:%s reply_type:%d", __func__, page_link->c_str(), -1);
+        LOG(WARN, "page_link:%s reply_type:%d", page_link->c_str(), -1);
         return;
     }
 
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> page_link:%s reply:%s", __func__, page_link->c_str(), reply->str);
+        LOG(WARN, "page_link:%s reply:%s", page_link->c_str(), reply->str);
     }
 
     freeReplyObject(reply.release());
@@ -181,19 +192,18 @@ bool RedisServer::get_visit_record(shared_ptr<string> page, int start, int end)
     if (!redis_is_health || (nullptr == conn && !connect_redis()))
         return false;
 
-    string key{"visitRecordMap"};
-
+    string key{keys.visit_record_map};
     unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "ZREVRANGE %s %d %d WITHSCORES", key.c_str(), start, end));
 
     if (nullptr == reply)
     {
-        LOG(WARN, "<%s> reply_type:%d", __func__, -1);
+        LOG(WARN, "reply_type:%d", -1);
         return false;
     }
 
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(WARN, "<%s> reply:%s", __func__, reply->str);
+        LOG(WARN, "reply:%s", reply->str);
 
         freeReplyObject(reply.release());
         return false;
@@ -235,15 +245,14 @@ bool RedisServer::query_cache(shared_ptr<const string> page_link, shared_ptr<str
     if (nullptr == conn && !connect_redis())
         return false;
 
-    
     add_visit_record(page_link);
 
-    string key{"pageCache"};
+    string key{keys.page_cache};
 
     unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "HGET %s %s", key.c_str(), page_link->c_str()));
     if (nullptr == reply)
     {
-        LOG(WARN, "<%s> page_link:%s reply_type:%d", __func__, page_link->c_str(), -1);
+        LOG(WARN, "page_link:%s reply_type:%d", page_link->c_str(), -1);
         return false;
     }
 
@@ -256,7 +265,7 @@ bool RedisServer::query_cache(shared_ptr<const string> page_link, shared_ptr<str
 
     if (reply->type != REDIS_REPLY_STRING)
     {
-        LOG(WARN, "<%s> page_link:%s reply_type:%d", __func__, page_link->c_str(), reply->type);
+        LOG(WARN, "page_link:%s reply_type:%d", page_link->c_str(), reply->type);
 
         freeReplyObject(reply.release());
         return false;
@@ -278,7 +287,7 @@ bool RedisServer::connect_redis()
     conn.reset(redisConnect(redis_addr.c_str(), redis_port));
     if (conn->err)
     {
-        LOG(ERROR, "<%s> error_flag:%d, addr:%s port: %d", __func__, conn->err, redis_addr.c_str(), redis_port);
+        LOG(ERROR, "error_flag:%d, addr:%s port: %d", conn->err, redis_addr.c_str(), redis_port);
 
         retry_count += 1;
         return false;
@@ -289,19 +298,35 @@ bool RedisServer::connect_redis()
 
     if (nullptr == reply)
     {
-        LOG(INFO, "<%s> reply is null", __func__);
+        LOG(INFO, "reply is null");
         return false;
     }
 
     if (reply->type == REDIS_REPLY_ERROR)
     {
-        LOG(ERROR, "<%s> redis AUTH error addr:%s port:%d, password:%s", __func__, redis_addr.c_str(), redis_port, REDIS_PASSWORD);
+        LOG(ERROR, "redis AUTH error addr:%s port:%d, password:%s", redis_addr.c_str(), redis_port, REDIS_PASSWORD);
         freeReplyObject(reply.release());
         return false;
     }
 #endif
+    if (redis_db != 0)
+    {
+        unique_ptr<redisReply> reply2((redisReply *)redisCommand(conn.get(), "SELECT %d", redis_db));
 
-    LOG(INFO, "<%s> redis connect success! addr:%s port:%d", __func__, redis_addr.c_str(), redis_port);
+        if (nullptr == reply2)
+        {
+            LOG(ERROR, "select db error db:%d", redis_db);
+        }
+
+        if (reply2->type == REDIS_REPLY_ERROR)
+        {
+            LOG(ERROR, "reply:%s", reply2->str);
+            freeReplyObject(reply2.release());
+            return false;
+        }
+    }
+
+    LOG(INFO, "redis connect success! addr:%s port:%d", redis_addr.c_str(), redis_port);
     retry_count = 0;
     return true;
 }
@@ -314,14 +339,14 @@ inline unique_ptr<const string> parse_request_path(struct evhttp_request *req)
     string uri{evhttp_request_get_uri(req)};
     if (uri == "")
     {
-        LOG(INFO, "<%s> URI is null", __func__);
+        LOG(INFO, "URI is null");
         return nullptr;
     }
 
     struct evhttp_uri *decode_uri = evhttp_uri_parse(uri.c_str());
     if (nullptr == decode_uri)
     {
-        LOG(INFO, "<%s> decode_uri is null", __func__);
+        LOG(INFO, "decode_uri is null");
         evhttp_send_error(req, HTTP_BADREQUEST, 0);
         return nullptr;
     }
@@ -335,7 +360,7 @@ void visit_info_cb(struct evhttp_request *req, void *arg)
 {
     if (nullptr == req)
     {
-        LOG(ERROR, "<%s> visit_info request is null", __func__);
+        LOG(ERROR, "visit_info request is null");
         return;
     }
 
@@ -365,14 +390,14 @@ void get_cb(struct evhttp_request *req, void *arg)
 {
     if (nullptr == req)
     {
-        LOG(INFO, "<%s> get request is null", __func__);
+        LOG(INFO, "get request is null");
         return;
     }
 
     shared_ptr<const string> path_old(parse_request_path(req));
     if (nullptr == path_old)
     {
-        LOG(INFO, "<%s> path is null", __func__);
+        LOG(INFO, "path is null");
         return;
     }
     /* TODO In the future, take out the common code below, 
@@ -385,7 +410,7 @@ void get_cb(struct evhttp_request *req, void *arg)
     struct stat buf;
     if (stat(path->c_str(), &buf) == -1)
     {
-        LOG(WARN, "<%s> file not exist file:%s", __func__, path->c_str());
+        LOG(WARN, "file not exist file:%s", path->c_str());
         path->assign("404.html");
     }
 
@@ -396,7 +421,7 @@ void get_cb(struct evhttp_request *req, void *arg)
     }
 #endif
 
-    LOG(DEBUG, "<%s> path:%s", __func__, path.get());
+    LOG(DEBUG, "path:%s", path.get());
 
     struct evbuffer *retbuff = evbuffer_new();
     if (nullptr == retbuff)
@@ -407,7 +432,7 @@ void get_cb(struct evhttp_request *req, void *arg)
     string::size_type i = path->rfind('.');
     if (i == string::npos)
     {
-        LOG(INFO, "<%s> error page link:%s:", __func__, path->c_str());
+        LOG(INFO, "error page link:%s", path->c_str());
         path->assign("404.html");
         i = path->rfind('.');
     }
@@ -430,7 +455,7 @@ void get_cb(struct evhttp_request *req, void *arg)
         content_type = "application/x-png";
     else
     {
-        LOG(INFO, "<%s> unknown extension:%s", __func__, ext.c_str());
+        LOG(INFO, "unknown extension:%s", ext.c_str());
         /* take unknow files types as plain file*/
         content_type = "text/plain";
     }
@@ -441,7 +466,7 @@ void get_cb(struct evhttp_request *req, void *arg)
         if (redis_server->query_cache(path, page))
         {
             evbuffer_add_printf(retbuff, "%s\n", page->c_str());
-            LOG(DEBUG, "<%s> get page from cache path_link:%s", __func__, path->c_str());
+            LOG(DEBUG, "get page from cache path_link:%s", path->c_str());
 
             break;
         }
@@ -450,7 +475,7 @@ void get_cb(struct evhttp_request *req, void *arg)
         shared_ptr<string> buffer(new string);
         if (!file.is_open())
         {
-            LOG(WARN, "<%s> open file error file:%s", __func__, path->c_str());
+            LOG(WARN, "open file error file:%s", path->c_str());
             path->assign("404.html");
         }
         string tmp;
