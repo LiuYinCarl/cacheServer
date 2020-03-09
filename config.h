@@ -1,3 +1,6 @@
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
 #define BUF_SIZE 1024 * 1024
 
 #define REDIS_ADDR "127.0.0.1"
@@ -13,3 +16,5 @@
 
 /* forbid the client request website.log */
 #define HIDE_LOG_FILE
+
+#endif // __CONFIG_H__

@@ -1,3 +1,6 @@
+#ifndef __SERVER_H__
+#define __SERVER_H__
+
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <cstring>
@@ -14,6 +17,7 @@
 #include <hiredis/hiredis.h>
 #include "log.h"
 #include "config.h"
+
 
 #define DEBUG LOG_TYPE::LOG_DEBUG
 #define INFO LOG_TYPE::LOG_INFO
@@ -517,3 +521,5 @@ void signal_handler(int sig)
         break;
     }
 }
+
+#endif // __SERVER_H__
