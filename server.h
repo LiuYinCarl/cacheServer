@@ -453,6 +453,8 @@ void get_cb(struct evhttp_request *req, void *arg)
         content_type = "application/pdf";
     else if (ext.compare(".png") == 0)
         content_type = "application/x-png";
+    else if (ext.compare(".svg") == 0)
+        content_type = "text/xml";
     else
     {
         LOG(INFO, "unknown extension:%s", ext.c_str());
@@ -479,9 +481,11 @@ void get_cb(struct evhttp_request *req, void *arg)
             path->assign("404.html");
         }
         string tmp;
+        /* TODO the read file method is wrong to binary file */
         while (getline(file, tmp))
         {
-            buffer->append(tmp);
+            /* append a '\n' to avoid getline() strip '\n' */
+            buffer->append(tmp.append("\n"));
         }
         file.close();
 

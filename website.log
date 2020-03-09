@@ -1,5 +1,0 @@
-2020-03-09 00:30:45[ERROR] test_log 17 test log function 100 3.140000
-2020-03-09 00:31:48[ERROR]<test_log: 17>test log function 100 3.140000
-2020-03-09 00:39:17[ERROR]<connect_redis: 307>redis AUTH error addr:127.0.0.1 port:6379, password:hello world
-2020-03-09 00:39:31[INFO]<get_cb: 435>error page link:www/:
-2020-03-09 00:39:36[WARN]<get_cb: 413>file not exist file:www/index.html888888888
