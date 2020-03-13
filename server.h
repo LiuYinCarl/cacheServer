@@ -113,7 +113,7 @@ void RedisServer::insert_cache(shared_ptr<const string> page_link,
     string key{keys.page_cache};
 
     unique_ptr<redisReply> reply((redisReply *)redisCommand(conn.get(), "HSET %s %s %s", key.c_str(), page_link->c_str(), page->c_str()));
-    if (reply == nullptr)
+    if (nullptr == reply)
     {
         LOG(WARN, "page_link:%s reply_type:%d", page_link->c_str(), -1);
         return;
@@ -459,6 +459,10 @@ void get_cb(struct evhttp_request *req, void *arg)
         content_type = "application/x-png";
     else if (ext.compare(".svg") == 0)
         content_type = "text/xml";
+    else if (ext.compare(".ttf") == 0)
+        content_type = "application/x-font-truetype";
+    else if (ext.compare(".woff") ==0 || ext.compare(".woff2") == 0)
+        content_type = "application/x-font-woff";
     else
     {
         LOG(INFO, "unknown extension:%s", ext.c_str());
