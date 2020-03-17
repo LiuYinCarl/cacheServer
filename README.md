@@ -27,11 +27,13 @@ Libevent 实现了一个简爱的 HTTP 服务器，考虑到服务器内存比�
 ## 结构介绍
 
 ```
-log.h		日志相关
-config.h	配置文件
-server.h	服务器主体代码
+log.h		    日志相关
+config.h	    配置文件
+server.h	    服务器主体代码
 server.cpp      主函数位置
 website.log 	日志文件
+build.sh        编译脚本
+auto_reload.sh  服务器程序异常退出自动重启脚本（异常退出可能性很低，只出现过一次，原因还没找到）
 www/            提供的测试网页
 ```
 
