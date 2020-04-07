@@ -446,7 +446,7 @@ void get_cb(struct evhttp_request *req, void *arg)
     string content_type;
 
     if (ext.compare(".html") == 0 || ext.compare(".htm") == 0)
-        content_type = "text/html";
+        content_type = "text/html;charset=utf-8";
     else if (ext.compare(".ico") == 0)
         content_type = "image/x-icon";
     else if (ext.compare(".js") == 0)
@@ -467,7 +467,7 @@ void get_cb(struct evhttp_request *req, void *arg)
     {
         LOG(INFO, "unknown extension:%s", ext.c_str());
         /* take unknow files types as plain file*/
-        content_type = "text/plain";
+        content_type = "text/plain;charset=utf-8";
     }
 
     do
